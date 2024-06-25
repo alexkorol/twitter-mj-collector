@@ -1,3 +1,5 @@
+// Twitter Midjourney Collector
+
 // Part 1: Utility Functions
 function initUtilityFunctions() {
     window.twitterSrefScraper = window.twitterSrefScraper || {};
@@ -11,7 +13,7 @@ function initUtilityFunctions() {
         const tweetText = tss.sanitizeText(tweet.querySelector('[data-testid="tweetText"]').textContent);
         const authorElement = tweet.querySelector('[data-testid="User-Name"]');
         const displayName = tss.sanitizeText(authorElement.querySelector('span').textContent);
-        const username = tss.sanitizeText(authorElement.querySelectorAll('span')[1].textContent);
+        const username = tss.sanitizeText(authorElement.querySelectorAll('span')[3].textContent);
         
         const srefMatch = tweetText.match(/--sref\s+([\d\s:]+)/);
         if (!srefMatch) return null;
@@ -63,23 +65,48 @@ function initUIFunctions() {
             position: fixed;
             top: 10px;
             right: 10px;
-            background-color: white;
-            border: 1px solid black;
-            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border: 2px solid #1DA1F2;
+            border-radius: 10px;
+            padding: 15px;
             z-index: 9999;
+            font-family: Arial, sans-serif;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
         `;
         
         const recordButton = document.createElement('button');
         recordButton.textContent = 'Start Recording';
+        recordButton.style.cssText = `
+            background-color: #1DA1F2;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin-right: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        `;
         recordButton.onclick = tss.toggleRecording;
         
         const stopButton = document.createElement('button');
         stopButton.textContent = 'Stop & Save';
+        stopButton.style.cssText = `
+            background-color: #E0245E;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        `;
         stopButton.onclick = tss.stopAndSave;
         
         const countDisplay = document.createElement('div');
         countDisplay.id = 'srefCount';
         countDisplay.textContent = 'Srefs captured: 0';
+        countDisplay.style.cssText = `
+            margin-top: 10px;
+            font-weight: bold;
+            color: #1DA1F2;
+        `;
         
         tss.uiContainer.appendChild(recordButton);
         tss.uiContainer.appendChild(stopButton);
@@ -91,6 +118,7 @@ function initUIFunctions() {
         tss.isRecording = !tss.isRecording;
         const recordButton = tss.uiContainer.querySelector('button');
         recordButton.textContent = tss.isRecording ? 'Pause Recording' : 'Resume Recording';
+        recordButton.style.backgroundColor = tss.isRecording ? '#17BF63' : '#1DA1F2';
         if (tss.isRecording) {
             tss.runScraper();
         }
@@ -158,6 +186,9 @@ function initTwitterSrefScraper() {
 initUtilityFunctions();
 initUIFunctions();
 initMainScraper();
+initTwitterSrefScraper();
+
+console.log("All parts of Twitter Sref Scraper have been initialized.");
 initTwitterSrefScraper();
 
 console.log("All parts of Twitter Sref Scraper have been initialized.");
