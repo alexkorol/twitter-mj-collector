@@ -1,16 +1,18 @@
-(function() {
-    // Utility functions
-    function sanitizeText(text) {
-        return text.replace(/[\n\r]+/g, ' ').trim();
-    }
+// Part 1: Utility Functions
+function initUtilityFunctions() {
+    window.twitterSrefScraper = window.twitterSrefScraper || {};
+    const tss = window.twitterSrefScraper;
 
-    function extractSrefData(tweet) {
-        const tweetText = sanitizeText(tweet.querySelector('[data-testid="tweetText"]').textContent);
+    tss.sanitizeText = function(text) {
+        return text.replace(/[\n\r]+/g, ' ').trim();
+    };
+
+    tss.extractSrefData = function(tweet) {
+        const tweetText = tss.sanitizeText(tweet.querySelector('[data-testid="tweetText"]').textContent);
         const authorElement = tweet.querySelector('[data-testid="User-Name"]');
-        const displayName = sanitizeText(authorElement.querySelector('span').textContent);
-        const username = sanitizeText(authorElement.querySelectorAll('span')[1].textContent);
+        const displayName = tss.sanitizeText(authorElement.querySelector('span').textContent);
+        const username = tss.sanitizeText(authorElement.querySelectorAll('span')[1].textContent);
         
-        // Capture both single srefs and weighted blends
         const srefMatch = tweetText.match(/--sref\s+([\d\s:]+)/);
         if (!srefMatch) return null;
         
@@ -23,33 +25,41 @@
         const imageElement = tweet.querySelector('img[alt="Image"]');
         const imageUrl = imageElement ? imageElement.src : '';
         
-        return { displayName, username, sref, description    }
+        return { displayName, username, sref, description, tweetUrl, imageUrl };
+    };
 
-    function scrapeSrefs() {
+    tss.scrapeSrefs = function() {
         const tweets = document.querySelectorAll('[data-testid="tweet"]');
         const srefData = [];
         
         tweets.forEach(tweet => {
-            const data = extractSrefData(tweet);
-            if (        });
+            const data = tss.extractSrefData(tweet);
+            if (data) srefData.push(data);
+        });
         
         return srefData;
-    }
+    };
 
-    function formatAsCSV(data) {
+    tss.formatAsCSV = function(data) {
         const header = "Display Name,Username,Sref,Description,Tweet URL,Image URL\n";
         const rows = data.map(item => 
-            `"${item.displayName}","${item.username}","${item.sref}","        ).join('\n');
+            `"${item.displayName}","${item.username}","${item.sref}","${item.description}","${item.tweetUrl}","${item.imageUrl}"`
+        ).join('\n');
         return header + rows;
-    }
+    };
 
-    // Variables and UI functions
-    let isRecording = false;
-    let allSrefData = [];
-    let uiContainer;
+    console.log("Utility functions initialized.");
+}
 
-    function create        uiContainer = document.createElement('div');
-        uiContainer.style.cssText = `
+// Part 2: UI Functions
+function initUIFunctions() {
+    const tss = window.twitterSrefScraper;
+    tss.isRecording = false;
+    tss.allSrefData = [];
+
+    tss.createUI = function() {
+        tss.uiContainer = document.createElement('div');
+        tss.uiContainer.style.cssText = `
             position: fixed;
             top: 10px;
             right: 10px;
@@ -58,73 +68,96 @@
             padding: 10px;
             z-index: 9999;
         `;
-                const recordButton = document.createElement('button');
+        
+        const recordButton = document.createElement('button');
         recordButton.textContent = 'Start Recording';
-        recordButton.onclick = toggleRecording;
+        recordButton.onclick = tss.toggleRecording;
         
         const stopButton = document.createElement('button');
         stopButton.textContent = 'Stop & Save';
-        stopButton.onclick = stopAndSave;
+        stopButton.onclick = tss.stopAndSave;
         
-        const countDisplay        countDisplay.id = 'srefCount';
+        const countDisplay = document.createElement('div');
+        countDisplay.id = 'srefCount';
         countDisplay.textContent = 'Srefs captured: 0';
         
-        uiContainer.appendChild(recordButton);
-        uiContainer.appendChild(stopButton);
-        uiContainer.appendChild(countDisplay);
-        document.body.appendChild(uiContainer);
-    }
+        tss.uiContainer.appendChild(recordButton);
+        tss.uiContainer.appendChild(stopButton);
+        tss.uiContainer.appendChild(countDisplay);
+        document.body.appendChild(tss.uiContainer);
+    };
 
-    function toggleRecording() {        isRecording = !isRecording;
-        const recordButton = uiContainer.querySelector('button');
-        recordButton.textContent = isRecording ? 'Pause Recording' : 'Resume Recording';
-        if (isRecording) {
-            runScraper();
+    tss.toggleRecording = function() {
+        tss.isRecording = !tss.isRecording;
+        const recordButton = tss.uiContainer.querySelector('button');
+        recordButton.textContent = tss.isRecording ? 'Pause Recording' : 'Resume Recording';
+        if (tss.isRecording) {
+            tss.runScraper();
         }
-    }
-    function stopAndSave() {
-        isRecording = false;
-        const csv = formatAsCSV(allSrefData);
+    };
+
+    tss.stopAndSave = function() {
+        tss.isRecording = false;
+        const csv = tss.formatAsCSV(tss.allSrefData);
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', 's        link.click();
-        allSrefData = [];
-        updateSrefCount();
-    }
+        link.setAttribute('download', 'sref_data.csv');
+        link.click();
+        tss.allSrefData = [];
+        tss.updateSrefCount();
+    };
 
-    function updateSrefCount() {
+    tss.updateSrefCount = function() {
         const countDisplay = document.getElementById('srefCount');
-        countDisplay.textContent = `Srefs captured: ${allSrefData.length}`;
-    }
+        countDisplay.textContent = `Srefs captured: ${tss.allSrefData.length}`;
+    };
 
-    // Main scraper function
-    function runScraper() {        if (!isRecording) return;
+    console.log("UI functions initialized.");
+}
+
+// Part 3: Main Scraper Function
+function initMainScraper() {
+    const tss = window.twitterSrefScraper;
+
+    tss.runScraper = function() {
+        if (!tss.isRecording) return;
         
-        const newSrefData = scrapeSrefs();
+        const newSrefData = tss.scrapeSrefs();
         const newUniqueSrefs = newSrefData.filter(newItem => 
-            !allSrefData.some(existingItem => existingItem.sref        );
+            !tss.allSrefData.some(existingItem => existingItem.sref === newItem.sref)
+        );
         
-        allSrefData = [...allSrefData, ...newUniqueSrefs];
-        updateSrefCount();
+        tss.allSrefData = [...tss.allSrefData, ...newUniqueSrefs];
+        tss.updateSrefCount();
         
-        setTimeout(runScraper, 5000); // Run every 5 seconds while recording
-    }
+        setTimeout(tss.runScraper, 5000); // Run every 5 seconds while recording
+    };
 
-    // Initialize the script
-    function init() {
-        createUI();
-        // Run the scraper when scrolling stops
-        let scrollTimeout;
-        window.addEventListener('scroll', () => {
-            if (!isRecording) return;
-            clearTimeout(scrollTimeout);
-            scrollTimeout = setTimeout(runScraper, 1000); // Run        });
+    console.log("Main scraper function initialized.");
+}
 
-        console.log("Twitter Sref Scraper initialized. UI is now visible.");
-    }
+// Part 4: Initialization
+function initTwitterSrefScraper() {
+    const tss = window.twitterSrefScraper;
+    tss.createUI();
 
-    // Run the initialization
-    init();
-})();
+    // Run the scraper when scrolling stops
+    let scrollTimeout;
+    window.addEventListener('scroll', () => {
+        if (!tss.isRecording) return;
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(tss.runScraper, 1000); // Run 1 second after scrolling stops
+    });
+
+    console.log("Twitter Sref Scraper initialized. UI is now visible.");
+}
+
+// Execute each part
+initUtilityFunctions();
+initUIFunctions();
+initMainScraper();
+initTwitterSrefScraper();
+
+console.log("All parts of Twitter Sref Scraper have been initialized.");
