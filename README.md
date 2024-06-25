@@ -32,6 +32,10 @@ This script runs directly in your browser and doesn't require installation. Howe
 Dependencies:
 - No external libraries are required. The script uses vanilla JavaScript and runs in the browser environment.
 
+## To-do:
+
+1. Username field does not get scraped correctly (gets display name instead).
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
